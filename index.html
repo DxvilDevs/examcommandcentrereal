@@ -5,187 +5,428 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Exam Command Centre</title>
 
-  <!-- Tailwind CDN (MVP). Swap for compiled Tailwind in production. -->
+  <!-- Tailwind CDN -->
   <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: { sans: ["ui-sans-serif","system-ui","-apple-system","Segoe UI","Roboto","Inter","Arial"] }
+        }
+      }
+    };
+  </script>
 
-  <!-- Chart.js -->
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-
-  <link rel="stylesheet" href="./styles.css" />
+  <style>
+    /* IMPORTANT: No full-screen overlay that can hide UI. Background is on body itself. */
+    body{
+      background:
+        radial-gradient(900px 520px at 15% 10%, rgba(99,102,241,.22), transparent 65%),
+        radial-gradient(900px 520px at 85% 20%, rgba(236,72,153,.20), transparent 65%),
+        radial-gradient(900px 520px at 50% 95%, rgba(34,197,94,.14), transparent 60%),
+        #050814;
+    }
+    .glass{
+      background: rgba(255,255,255,.06);
+      border: 1px solid rgba(255,255,255,.10);
+      backdrop-filter: blur(14px);
+      -webkit-backdrop-filter: blur(14px);
+    }
+    .ring-soft{ box-shadow: 0 0 0 1px rgba(255,255,255,.06) inset; }
+    .btn{
+      border: 1px solid rgba(255,255,255,.12);
+      background: rgba(255,255,255,.06);
+      transition: transform .12s ease, background .12s ease, border-color .12s ease;
+    }
+    .btn:hover{ transform: translateY(-1px); background: rgba(255,255,255,.10); border-color: rgba(255,255,255,.20); }
+    .btn:active{ transform: translateY(0) scale(.99); }
+  </style>
 </head>
 
 <body class="min-h-screen text-slate-100">
-  <!-- Background glow -->
-  <div class="pointer-events-none fixed inset-0 opacity-90 bg-noise"></div>
-
-  <div class="mx-auto max-w-7xl px-4 py-6 md:py-8">
+  <!-- Shell -->
+  <div class="min-h-screen">
     <!-- Top bar -->
-    <header class="flex items-center justify-between gap-3 mb-6">
-      <div class="flex items-center gap-3">
-        <div class="h-10 w-10 rounded-2xl glass ring-soft flex items-center justify-center shadow-soft">
-          <span class="text-lg">⚡</span>
+    <header class="sticky top-0 z-20 border-b border-white/10 bg-black/20 backdrop-blur-xl">
+      <div class="mx-auto max-w-7xl px-4 py-3 flex items-center justify-between gap-3">
+        <div class="flex items-center gap-3">
+          <div class="h-10 w-10 rounded-2xl glass ring-soft grid place-items-center">
+            <span class="text-lg">📘</span>
+          </div>
+          <div class="leading-tight">
+            <div class="text-base md:text-lg font-semibold">Exam Command Centre</div>
+            <div class="text-xs text-slate-300" id="subtitle">Your dashboard for calm, consistent progress.</div>
+          </div>
         </div>
-        <div>
-          <h1 class="text-xl md:text-2xl font-semibold leading-tight">Exam Command Centre</h1>
-          <p class="text-slate-300 text-sm">Plan. Execute. Review.</p>
-        </div>
-      </div>
 
-      <div class="flex items-center gap-2">
-        <button id="btnFocus" class="btn rounded-2xl px-3 py-2 text-sm">Focus Mode</button>
-        <button id="btnReset" class="btn rounded-2xl px-3 py-2 text-sm">Reset</button>
+        <div class="flex items-center gap-2">
+          <button id="focusBtn" class="btn rounded-2xl px-3 py-2 text-sm">Focus Mode</button>
+          <button id="resetBtn" class="btn rounded-2xl px-3 py-2 text-sm">Reset</button>
+        </div>
       </div>
     </header>
 
-    <!-- Grid -->
-    <main class="grid grid-cols-1 lg:grid-cols-12 gap-4">
-      <!-- Left: Command + Charts -->
-      <section class="lg:col-span-8 space-y-4">
-        <!-- KPIs -->
-        <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+    <!-- Content -->
+    <div class="mx-auto max-w-7xl px-4 py-6">
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-4">
+        <!-- Sidebar (mobile collapses naturally) -->
+        <aside class="lg:col-span-3 space-y-4">
           <div class="glass ring-soft rounded-3xl p-4">
-            <p class="text-xs text-slate-300">Today</p>
-            <p class="text-2xl font-semibold" id="kpiToday">0h 00m</p>
-            <p class="text-xs text-slate-400 mt-1">Study time logged</p>
+            <div class="flex items-center justify-between">
+              <div class="text-sm font-semibold">Quick Start</div>
+              <div class="text-xs text-slate-400" id="todayStamp">—</div>
+            </div>
+
+            <div class="mt-3 space-y-2 text-sm">
+              <div class="flex items-start gap-2">
+                <span class="mt-0.5">1.</span>
+                <div>
+                  <div class="font-medium">Set your next exam</div>
+                  <div class="text-xs text-slate-300">So the dashboard can count down.</div>
+                </div>
+              </div>
+              <div class="flex items-start gap-2">
+                <span class="mt-0.5">2.</span>
+                <div>
+                  <div class="font-medium">Add 3 tiny tasks</div>
+                  <div class="text-xs text-slate-300">Small tasks = momentum.</div>
+                </div>
+              </div>
+              <div class="flex items-start gap-2">
+                <span class="mt-0.5">3.</span>
+                <div>
+                  <div class="font-medium">Write a 2-line debrief</div>
+                  <div class="text-xs text-slate-300">Mistake → fix. That’s it.</div>
+                </div>
+              </div>
+            </div>
           </div>
+
           <div class="glass ring-soft rounded-3xl p-4">
-            <p class="text-xs text-slate-300">Streak</p>
-            <p class="text-2xl font-semibold" id="kpiStreak">0</p>
-            <p class="text-xs text-slate-400 mt-1">Days in a row</p>
+            <div class="text-sm font-semibold">Next exam</div>
+
+            <label class="block mt-3 text-xs text-slate-300">Label</label>
+            <input id="examLabel" class="mt-1 w-full rounded-2xl bg-white/5 ring-soft px-3 py-2 text-sm outline-none"
+              placeholder="e.g., Biology Paper 1"/>
+
+            <label class="block mt-3 text-xs text-slate-300">Date</label>
+            <input id="examDate" type="date" class="mt-1 w-full rounded-2xl bg-white/5 ring-soft px-3 py-2 text-sm outline-none"/>
+
+            <div class="flex justify-end mt-3">
+              <button id="saveExamBtn" class="btn rounded-2xl px-3 py-2 text-sm">Save</button>
+            </div>
+
+            <div class="mt-3 text-xs text-slate-400" id="examHint">Set a date to show countdown.</div>
           </div>
+
           <div class="glass ring-soft rounded-3xl p-4">
-            <p class="text-xs text-slate-300">Tasks</p>
-            <p class="text-2xl font-semibold"><span id="kpiDone">0</span>/<span id="kpiTotal">0</span></p>
-            <p class="text-xs text-slate-400 mt-1">Completed today</p>
-          </div>
-          <div class="glass ring-soft rounded-3xl p-4">
-            <p class="text-xs text-slate-300">Next Exam</p>
-            <p class="text-2xl font-semibold" id="kpiNext">—</p>
-            <p class="text-xs text-slate-400 mt-1">Set in “Schedule”</p>
-          </div>
-        </div>
-
-        <!-- Command centre / timeline -->
-        <div class="glass ring-soft rounded-3xl p-5 shadow-soft">
-          <div class="flex items-start justify-between gap-3 mb-3">
-            <div>
-              <h2 class="text-lg font-semibold">Today’s Command Plan</h2>
-              <p class="text-sm text-slate-300">A simple flow you can actually stick to.</p>
-            </div>
-            <div class="text-xs text-slate-400" id="todayStamp">—</div>
-          </div>
-
-          <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
-            <div class="rounded-3xl ring-soft p-4 bg-white/5">
-              <p class="text-sm font-semibold">1) Warm-up (10m)</p>
-              <p class="text-xs text-slate-300 mt-1">Review flashcards / key formulas.</p>
-            </div>
-            <div class="rounded-3xl ring-soft p-4 bg-white/5">
-              <p class="text-sm font-semibold">2) Deep work (45–90m)</p>
-              <p class="text-xs text-slate-300 mt-1">One topic, timed practice, no multitasking.</p>
-            </div>
-            <div class="rounded-3xl ring-soft p-4 bg-white/5">
-              <p class="text-sm font-semibold">3) Debrief (10m)</p>
-              <p class="text-xs text-slate-300 mt-1">Write mistakes + next action.</p>
+            <div class="text-sm font-semibold">Today’s plan</div>
+            <div class="mt-3 space-y-2">
+              <div class="rounded-2xl bg-white/5 ring-soft p-3">
+                <div class="text-sm font-medium">Warm-up (10m)</div>
+                <div class="text-xs text-slate-300">Flashcards / formulas.</div>
+              </div>
+              <div class="rounded-2xl bg-white/5 ring-soft p-3">
+                <div class="text-sm font-medium">Deep work (45–90m)</div>
+                <div class="text-xs text-slate-300">Timed practice, one topic.</div>
+              </div>
+              <div class="rounded-2xl bg-white/5 ring-soft p-3">
+                <div class="text-sm font-medium">Debrief (10m)</div>
+                <div class="text-xs text-slate-300">Mistake → why → fix.</div>
+              </div>
             </div>
           </div>
-        </div>
+        </aside>
 
-        <!-- Charts row -->
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div class="glass ring-soft rounded-3xl p-5 shadow-soft">
-            <div class="flex items-center justify-between mb-3">
-              <h3 class="font-semibold">Progress</h3>
-              <span class="text-xs text-slate-400">Per subject</span>
+        <!-- Main -->
+        <main class="lg:col-span-9 space-y-4">
+          <!-- KPI row -->
+          <section class="grid grid-cols-2 md:grid-cols-4 gap-3">
+            <div class="glass ring-soft rounded-3xl p-4">
+              <div class="text-xs text-slate-300">Countdown</div>
+              <div class="text-2xl font-semibold" id="kpiCountdown">—</div>
+              <div class="text-xs text-slate-400 mt-1" id="kpiCountdownLabel">Next exam</div>
             </div>
-            <canvas id="chartProgress" height="150"></canvas>
-          </div>
-
-          <div class="glass ring-soft rounded-3xl p-5 shadow-soft">
-            <div class="flex items-center justify-between mb-3">
-              <h3 class="font-semibold">Time Breakdown</h3>
-              <span class="text-xs text-slate-400">Today</span>
+            <div class="glass ring-soft rounded-3xl p-4">
+              <div class="text-xs text-slate-300">Tasks done</div>
+              <div class="text-2xl font-semibold"><span id="kpiDone">0</span>/<span id="kpiTotal">0</span></div>
+              <div class="text-xs text-slate-400 mt-1">Today</div>
             </div>
-            <canvas id="chartBreakdown" height="150"></canvas>
-          </div>
-        </div>
+            <div class="glass ring-soft rounded-3xl p-4">
+              <div class="text-xs text-slate-300">Estimated study</div>
+              <div class="text-2xl font-semibold" id="kpiTime">0h 00m</div>
+              <div class="text-xs text-slate-400 mt-1">Based on completed tasks</div>
+            </div>
+            <div class="glass ring-soft rounded-3xl p-4">
+              <div class="text-xs text-slate-300">Debrief</div>
+              <div class="text-2xl font-semibold" id="kpiDebrief">Empty</div>
+              <div class="text-xs text-slate-400 mt-1">Write 2 lines</div>
+            </div>
+          </section>
 
-        <div class="glass ring-soft rounded-3xl p-5 shadow-soft">
-          <div class="flex items-center justify-between mb-3">
-            <h3 class="font-semibold">Focus Trend</h3>
-            <span class="text-xs text-slate-400">Last 7 days</span>
-          </div>
-          <canvas id="chartTrend" height="120"></canvas>
-        </div>
+          <!-- Tasks + Notes -->
+          <section class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div class="glass ring-soft rounded-3xl p-5">
+              <div class="flex items-center justify-between gap-3">
+                <div>
+                  <div class="text-lg font-semibold">Tasks</div>
+                  <div class="text-sm text-slate-300">Keep it tiny. Keep it moving.</div>
+                </div>
+                <button id="addTaskBtn" class="btn rounded-2xl px-3 py-2 text-sm">Add</button>
+              </div>
 
-        <!-- USP / Marketing section placeholder (from “combat science website usp”) -->
-        <div class="glass ring-soft rounded-3xl p-5 shadow-soft">
-          <h2 class="text-lg font-semibold">Why this works</h2>
-          <p class="text-sm text-slate-300 mt-1">
-            Paste your “Combat Science website USP” copy here and I’ll format it into tight cards.
-          </p>
+              <div class="mt-4 flex gap-2">
+                <input id="taskInput" class="w-full rounded-2xl bg-white/5 ring-soft px-3 py-2 text-sm outline-none"
+                  placeholder="e.g., Maths: past paper Q1–Q5" />
+                <button id="saveTaskBtn" class="btn rounded-2xl px-3 py-2 text-sm">Save</button>
+              </div>
 
-          <div id="uspGrid" class="mt-4 grid grid-cols-1 md:grid-cols-3 gap-3">
-            <!-- Filled by JS (replace with your USP items) -->
-          </div>
-        </div>
-      </section>
+              <ul id="taskList" class="mt-4 space-y-2"></ul>
+            </div>
 
-      <!-- Right: Tasks / Notes / Schedule -->
-      <aside class="lg:col-span-4 space-y-4">
-        <!-- Tasks -->
-        <div class="glass ring-soft rounded-3xl p-5 shadow-soft">
-          <div class="flex items-center justify-between mb-3">
-            <h2 class="text-lg font-semibold">Tasks</h2>
-            <button id="btnAddTask" class="btn rounded-2xl px-3 py-2 text-sm">Add</button>
-          </div>
+            <div class="glass ring-soft rounded-3xl p-5">
+              <div class="text-lg font-semibold">Debrief notes</div>
+              <div class="text-sm text-slate-300">Mistake → reason → fix.</div>
 
-          <div class="flex gap-2 mb-3">
-            <input id="taskInput" class="w-full rounded-2xl bg-white/5 ring-soft px-3 py-2 text-sm outline-none"
-              placeholder="e.g., Maths: past paper Q1–Q5" />
-            <button id="btnSaveTask" class="btn rounded-2xl px-3 py-2 text-sm">Save</button>
-          </div>
+              <textarea id="notes" rows="10"
+                class="mt-4 w-full rounded-2xl bg-white/5 ring-soft px-3 py-2 text-sm outline-none"
+                placeholder="Example:
+• Lost marks on osmosis question → rushed explanation → write 3 key sentences
+• Forgot formula → make 10-card deck"></textarea>
 
-          <ul id="taskList" class="space-y-2"></ul>
-        </div>
+              <div class="flex justify-end mt-3">
+                <button id="saveNotesBtn" class="btn rounded-2xl px-3 py-2 text-sm">Save Notes</button>
+              </div>
+            </div>
+          </section>
 
-        <!-- Notes -->
-        <div class="glass ring-soft rounded-3xl p-5 shadow-soft">
-          <h2 class="text-lg font-semibold mb-3">Debrief Notes</h2>
-          <textarea id="notes" rows="7"
-            class="w-full rounded-2xl bg-white/5 ring-soft px-3 py-2 text-sm outline-none"
-            placeholder="Mistake → Why → Fix. Keep it short."></textarea>
-          <div class="flex justify-end mt-3">
-            <button id="btnSaveNotes" class="btn rounded-2xl px-3 py-2 text-sm">Save Notes</button>
-          </div>
-        </div>
+          <!-- Simple “modern” highlight strip -->
+          <section class="glass ring-soft rounded-3xl p-5">
+            <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+              <div>
+                <div class="text-lg font-semibold">Momentum system</div>
+                <div class="text-sm text-slate-300">Small actions + fast feedback = real progress.</div>
+              </div>
+              <div class="flex gap-2">
+                <button class="btn rounded-2xl px-3 py-2 text-sm" id="seedBtn">Seed demo tasks</button>
+                <button class="btn rounded-2xl px-3 py-2 text-sm" id="clearDoneBtn">Clear done</button>
+              </div>
+            </div>
 
-        <!-- Schedule -->
-        <div class="glass ring-soft rounded-3xl p-5 shadow-soft">
-          <h2 class="text-lg font-semibold mb-3">Schedule</h2>
+            <div class="mt-4 grid grid-cols-1 md:grid-cols-3 gap-3">
+              <div class="rounded-3xl bg-white/5 ring-soft p-4">
+                <div class="text-sm font-semibold">Clarity</div>
+                <div class="text-xs text-slate-300 mt-1">You always know what to do next.</div>
+              </div>
+              <div class="rounded-3xl bg-white/5 ring-soft p-4">
+                <div class="text-sm font-semibold">Consistency</div>
+                <div class="text-xs text-slate-300 mt-1">Tiny tasks beat big motivation.</div>
+              </div>
+              <div class="rounded-3xl bg-white/5 ring-soft p-4">
+                <div class="text-sm font-semibold">Debrief</div>
+                <div class="text-xs text-slate-300 mt-1">Fix the cause, not the symptom.</div>
+              </div>
+            </div>
+          </section>
+        </main>
+      </div>
 
-          <label class="text-xs text-slate-300">Next exam label</label>
-          <input id="examLabel" class="mt-1 w-full rounded-2xl bg-white/5 ring-soft px-3 py-2 text-sm outline-none"
-            placeholder="e.g., Chemistry Paper 2" />
-
-          <label class="text-xs text-slate-300 mt-3 block">Exam date</label>
-          <input id="examDate" type="date"
-            class="mt-1 w-full rounded-2xl bg-white/5 ring-soft px-3 py-2 text-sm outline-none" />
-
-          <div class="flex justify-end mt-3">
-            <button id="btnSaveExam" class="btn rounded-2xl px-3 py-2 text-sm">Save</button>
-          </div>
-
-          <p class="text-xs text-slate-400 mt-3" id="examHint">Tip: set a date to show a live countdown.</p>
-        </div>
-      </aside>
-    </main>
-
-    <footer class="mt-8 text-center text-xs text-slate-500">
-      Built for speed. No fluff.
-    </footer>
+      <footer class="mt-8 text-center text-xs text-slate-500">
+        Built for speed. No fluff.
+      </footer>
+    </div>
   </div>
 
-  <script src="./app.js"></script>
+  <script>
+    // ======= Tiny app (LocalStorage) =======
+    const $ = (id) => document.getElementById(id);
+
+    const store = {
+      get(key, fallback){
+        try { const v = localStorage.getItem(key); return v ? JSON.parse(v) : fallback; }
+        catch { return fallback; }
+      },
+      set(key, value){ localStorage.setItem(key, JSON.stringify(value)); }
+    };
+
+    const state = {
+      tasks: store.get("ecc_tasks_v2", []),
+      notes: store.get("ecc_notes_v2", ""),
+      exam: store.get("ecc_exam_v2", { label: "", date: "" }),
+      focus: store.get("ecc_focus_v2", false)
+    };
+
+    // Stamp
+    (function(){
+      const d = new Date();
+      $("todayStamp").textContent = d.toLocaleString(undefined, { weekday:"short", day:"2-digit", month:"short" });
+    })();
+
+    function persist(){
+      store.set("ecc_tasks_v2", state.tasks);
+      store.set("ecc_notes_v2", state.notes);
+      store.set("ecc_exam_v2", state.exam);
+      store.set("ecc_focus_v2", state.focus);
+    }
+
+    function updateKPIs(){
+      const total = state.tasks.length;
+      const done = state.tasks.filter(t => t.done).length;
+      $("kpiTotal").textContent = String(total);
+      $("kpiDone").textContent = String(done);
+
+      // Demo time estimate: 25m per completed task
+      const minutes = Math.min(6*60, done * 25);
+      const h = Math.floor(minutes/60);
+      const m = minutes % 60;
+      $("kpiTime").textContent = `${h}h ${String(m).padStart(2,"0")}m`;
+
+      const hasNotes = (state.notes || "").trim().length > 0;
+      $("kpiDebrief").textContent = hasNotes ? "Saved" : "Empty";
+    }
+
+    function updateExam(){
+      const label = (state.exam.label || "").trim() || "Next exam";
+      $("kpiCountdownLabel").textContent = label;
+      $("examLabel").value = state.exam.label || "";
+      $("examDate").value = state.exam.date || "";
+
+      if (!state.exam.date){
+        $("kpiCountdown").textContent = "—";
+        $("examHint").textContent = "Set a date to show countdown.";
+        return;
+      }
+
+      const now = new Date();
+      const target = new Date(state.exam.date + "T00:00:00");
+      const diffDays = Math.ceil((target - now) / (1000*60*60*24));
+
+      if (diffDays >= 0) $("kpiCountdown").textContent = `${diffDays}d`;
+      else $("kpiCountdown").textContent = "Passed";
+
+      $("examHint").textContent = `${label} • ${target.toLocaleDateString()}`;
+    }
+
+    function renderTasks(){
+      const list = $("taskList");
+      list.innerHTML = "";
+
+      if (!state.tasks.length){
+        const li = document.createElement("li");
+        li.className = "text-sm text-slate-400";
+        li.textContent = "No tasks yet. Add 2–4 small ones.";
+        list.appendChild(li);
+        updateKPIs();
+        return;
+      }
+
+      for (const t of state.tasks){
+        const li = document.createElement("li");
+        li.className = "flex items-center gap-2 rounded-2xl bg-white/5 ring-soft px-3 py-2";
+
+        const cb = document.createElement("input");
+        cb.type = "checkbox";
+        cb.checked = !!t.done;
+        cb.className = "h-4 w-4";
+        cb.addEventListener("change", () => {
+          t.done = cb.checked;
+          persist();
+          renderTasks();
+        });
+
+        const title = document.createElement("div");
+        title.className = "flex-1 text-sm " + (t.done ? "line-through opacity-60" : "");
+        title.textContent = t.title;
+
+        const del = document.createElement("button");
+        del.className = "btn rounded-xl px-2 py-1 text-xs";
+        del.textContent = "Delete";
+        del.addEventListener("click", () => {
+          state.tasks = state.tasks.filter(x => x.id !== t.id);
+          persist();
+          renderTasks();
+        });
+
+        li.appendChild(cb);
+        li.appendChild(title);
+        li.appendChild(del);
+        list.appendChild(li);
+      }
+
+      updateKPIs();
+    }
+
+    function addTask(text){
+      const title = (text || "").trim();
+      if (!title) return;
+      state.tasks.unshift({ id: crypto.randomUUID(), title, done:false });
+      persist();
+      $("taskInput").value = "";
+      renderTasks();
+    }
+
+    function setFocus(on){
+      state.focus = !!on;
+      persist();
+      $("focusBtn").textContent = state.focus ? "Exit Focus" : "Focus Mode";
+
+      // Simple focus effect: soften non-essential text
+      document.body.classList.toggle("opacity-95", state.focus);
+      $("subtitle").textContent = state.focus
+        ? "Focus mode: keep it simple. One task at a time."
+        : "Your dashboard for calm, consistent progress.";
+    }
+
+    // ======= Wire up =======
+    $("addTaskBtn").addEventListener("click", () => $("taskInput").focus());
+    $("saveTaskBtn").addEventListener("click", () => addTask($("taskInput").value));
+    $("taskInput").addEventListener("keydown", (e) => { if (e.key === "Enter") addTask($("taskInput").value); });
+
+    $("saveNotesBtn").addEventListener("click", () => {
+      state.notes = $("notes").value || "";
+      persist();
+      updateKPIs();
+    });
+
+    $("saveExamBtn").addEventListener("click", () => {
+      state.exam = { label: $("examLabel").value.trim(), date: $("examDate").value };
+      persist();
+      updateExam();
+    });
+
+    $("seedBtn").addEventListener("click", () => {
+      const seed = [
+        "Maths: 15 mins algebra drill",
+        "Science: mark yesterday’s questions",
+        "English: write 1 paragraph plan"
+      ];
+      for (const s of seed) state.tasks.unshift({ id: crypto.randomUUID(), title: s, done:false });
+      persist();
+      renderTasks();
+    });
+
+    $("clearDoneBtn").addEventListener("click", () => {
+      state.tasks = state.tasks.filter(t => !t.done);
+      persist();
+      renderTasks();
+    });
+
+    $("focusBtn").addEventListener("click", () => setFocus(!state.focus));
+
+    $("resetBtn").addEventListener("click", () => {
+      localStorage.removeItem("ecc_tasks_v2");
+      localStorage.removeItem("ecc_notes_v2");
+      localStorage.removeItem("ecc_exam_v2");
+      localStorage.removeItem("ecc_focus_v2");
+      location.reload();
+    });
+
+    // Boot
+    $("notes").value = state.notes || "";
+    updateExam();
+    renderTasks();
+    updateKPIs();
+    setFocus(state.focus);
+  </script>
 </body>
 </html>
