@@ -1,0 +1,191 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Exam Command Centre</title>
+
+  <!-- Tailwind CDN (MVP). Swap for compiled Tailwind in production. -->
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <!-- Chart.js -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+  <link rel="stylesheet" href="./styles.css" />
+</head>
+
+<body class="min-h-screen text-slate-100">
+  <!-- Background glow -->
+  <div class="pointer-events-none fixed inset-0 opacity-90 bg-noise"></div>
+
+  <div class="mx-auto max-w-7xl px-4 py-6 md:py-8">
+    <!-- Top bar -->
+    <header class="flex items-center justify-between gap-3 mb-6">
+      <div class="flex items-center gap-3">
+        <div class="h-10 w-10 rounded-2xl glass ring-soft flex items-center justify-center shadow-soft">
+          <span class="text-lg">⚡</span>
+        </div>
+        <div>
+          <h1 class="text-xl md:text-2xl font-semibold leading-tight">Exam Command Centre</h1>
+          <p class="text-slate-300 text-sm">Plan. Execute. Review.</p>
+        </div>
+      </div>
+
+      <div class="flex items-center gap-2">
+        <button id="btnFocus" class="btn rounded-2xl px-3 py-2 text-sm">Focus Mode</button>
+        <button id="btnReset" class="btn rounded-2xl px-3 py-2 text-sm">Reset</button>
+      </div>
+    </header>
+
+    <!-- Grid -->
+    <main class="grid grid-cols-1 lg:grid-cols-12 gap-4">
+      <!-- Left: Command + Charts -->
+      <section class="lg:col-span-8 space-y-4">
+        <!-- KPIs -->
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+          <div class="glass ring-soft rounded-3xl p-4">
+            <p class="text-xs text-slate-300">Today</p>
+            <p class="text-2xl font-semibold" id="kpiToday">0h 00m</p>
+            <p class="text-xs text-slate-400 mt-1">Study time logged</p>
+          </div>
+          <div class="glass ring-soft rounded-3xl p-4">
+            <p class="text-xs text-slate-300">Streak</p>
+            <p class="text-2xl font-semibold" id="kpiStreak">0</p>
+            <p class="text-xs text-slate-400 mt-1">Days in a row</p>
+          </div>
+          <div class="glass ring-soft rounded-3xl p-4">
+            <p class="text-xs text-slate-300">Tasks</p>
+            <p class="text-2xl font-semibold"><span id="kpiDone">0</span>/<span id="kpiTotal">0</span></p>
+            <p class="text-xs text-slate-400 mt-1">Completed today</p>
+          </div>
+          <div class="glass ring-soft rounded-3xl p-4">
+            <p class="text-xs text-slate-300">Next Exam</p>
+            <p class="text-2xl font-semibold" id="kpiNext">—</p>
+            <p class="text-xs text-slate-400 mt-1">Set in “Schedule”</p>
+          </div>
+        </div>
+
+        <!-- Command centre / timeline -->
+        <div class="glass ring-soft rounded-3xl p-5 shadow-soft">
+          <div class="flex items-start justify-between gap-3 mb-3">
+            <div>
+              <h2 class="text-lg font-semibold">Today’s Command Plan</h2>
+              <p class="text-sm text-slate-300">A simple flow you can actually stick to.</p>
+            </div>
+            <div class="text-xs text-slate-400" id="todayStamp">—</div>
+          </div>
+
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+            <div class="rounded-3xl ring-soft p-4 bg-white/5">
+              <p class="text-sm font-semibold">1) Warm-up (10m)</p>
+              <p class="text-xs text-slate-300 mt-1">Review flashcards / key formulas.</p>
+            </div>
+            <div class="rounded-3xl ring-soft p-4 bg-white/5">
+              <p class="text-sm font-semibold">2) Deep work (45–90m)</p>
+              <p class="text-xs text-slate-300 mt-1">One topic, timed practice, no multitasking.</p>
+            </div>
+            <div class="rounded-3xl ring-soft p-4 bg-white/5">
+              <p class="text-sm font-semibold">3) Debrief (10m)</p>
+              <p class="text-xs text-slate-300 mt-1">Write mistakes + next action.</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Charts row -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div class="glass ring-soft rounded-3xl p-5 shadow-soft">
+            <div class="flex items-center justify-between mb-3">
+              <h3 class="font-semibold">Progress</h3>
+              <span class="text-xs text-slate-400">Per subject</span>
+            </div>
+            <canvas id="chartProgress" height="150"></canvas>
+          </div>
+
+          <div class="glass ring-soft rounded-3xl p-5 shadow-soft">
+            <div class="flex items-center justify-between mb-3">
+              <h3 class="font-semibold">Time Breakdown</h3>
+              <span class="text-xs text-slate-400">Today</span>
+            </div>
+            <canvas id="chartBreakdown" height="150"></canvas>
+          </div>
+        </div>
+
+        <div class="glass ring-soft rounded-3xl p-5 shadow-soft">
+          <div class="flex items-center justify-between mb-3">
+            <h3 class="font-semibold">Focus Trend</h3>
+            <span class="text-xs text-slate-400">Last 7 days</span>
+          </div>
+          <canvas id="chartTrend" height="120"></canvas>
+        </div>
+
+        <!-- USP / Marketing section placeholder (from “combat science website usp”) -->
+        <div class="glass ring-soft rounded-3xl p-5 shadow-soft">
+          <h2 class="text-lg font-semibold">Why this works</h2>
+          <p class="text-sm text-slate-300 mt-1">
+            Paste your “Combat Science website USP” copy here and I’ll format it into tight cards.
+          </p>
+
+          <div id="uspGrid" class="mt-4 grid grid-cols-1 md:grid-cols-3 gap-3">
+            <!-- Filled by JS (replace with your USP items) -->
+          </div>
+        </div>
+      </section>
+
+      <!-- Right: Tasks / Notes / Schedule -->
+      <aside class="lg:col-span-4 space-y-4">
+        <!-- Tasks -->
+        <div class="glass ring-soft rounded-3xl p-5 shadow-soft">
+          <div class="flex items-center justify-between mb-3">
+            <h2 class="text-lg font-semibold">Tasks</h2>
+            <button id="btnAddTask" class="btn rounded-2xl px-3 py-2 text-sm">Add</button>
+          </div>
+
+          <div class="flex gap-2 mb-3">
+            <input id="taskInput" class="w-full rounded-2xl bg-white/5 ring-soft px-3 py-2 text-sm outline-none"
+              placeholder="e.g., Maths: past paper Q1–Q5" />
+            <button id="btnSaveTask" class="btn rounded-2xl px-3 py-2 text-sm">Save</button>
+          </div>
+
+          <ul id="taskList" class="space-y-2"></ul>
+        </div>
+
+        <!-- Notes -->
+        <div class="glass ring-soft rounded-3xl p-5 shadow-soft">
+          <h2 class="text-lg font-semibold mb-3">Debrief Notes</h2>
+          <textarea id="notes" rows="7"
+            class="w-full rounded-2xl bg-white/5 ring-soft px-3 py-2 text-sm outline-none"
+            placeholder="Mistake → Why → Fix. Keep it short."></textarea>
+          <div class="flex justify-end mt-3">
+            <button id="btnSaveNotes" class="btn rounded-2xl px-3 py-2 text-sm">Save Notes</button>
+          </div>
+        </div>
+
+        <!-- Schedule -->
+        <div class="glass ring-soft rounded-3xl p-5 shadow-soft">
+          <h2 class="text-lg font-semibold mb-3">Schedule</h2>
+
+          <label class="text-xs text-slate-300">Next exam label</label>
+          <input id="examLabel" class="mt-1 w-full rounded-2xl bg-white/5 ring-soft px-3 py-2 text-sm outline-none"
+            placeholder="e.g., Chemistry Paper 2" />
+
+          <label class="text-xs text-slate-300 mt-3 block">Exam date</label>
+          <input id="examDate" type="date"
+            class="mt-1 w-full rounded-2xl bg-white/5 ring-soft px-3 py-2 text-sm outline-none" />
+
+          <div class="flex justify-end mt-3">
+            <button id="btnSaveExam" class="btn rounded-2xl px-3 py-2 text-sm">Save</button>
+          </div>
+
+          <p class="text-xs text-slate-400 mt-3" id="examHint">Tip: set a date to show a live countdown.</p>
+        </div>
+      </aside>
+    </main>
+
+    <footer class="mt-8 text-center text-xs text-slate-500">
+      Built for speed. No fluff.
+    </footer>
+  </div>
+
+  <script src="./app.js"></script>
+</body>
+</html>
