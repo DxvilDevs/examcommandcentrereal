@@ -7,10 +7,9 @@
 
   <!-- Tailwind CDN -->
   <script src="https://cdn.tailwindcss.com"></script>
-  <script>
+ <script>
   /* ========= API CONFIG ========= */
   const API_BASE = "https://examcommandcentrereal.onrender.com";
-
   const $ = (id) => document.getElementById(id);
 
   const state = {
@@ -20,56 +19,55 @@
     focus: false
   };
 
-  /* ========= HELPERS ========= */
   async function api(path, options = {}) {
     const res = await fetch(`${API_BASE}${path}`, {
       headers: { "Content-Type": "application/json" },
       ...options
     });
-    if (!res.ok) throw new Error(`API error: ${res.status}`);
+    if (!res.ok) throw new Error(`API ${res.status} for ${path}`);
     return res.status === 204 ? null : res.json();
   }
 
-  /* ========= INIT ========= */
+  /* ========= UI STAMP ========= */
   (function () {
     const d = new Date();
     $("todayStamp").textContent = d.toLocaleString(undefined, {
-      weekday: "short", day: "2-digit", month: "short"
+      weekday: "short",
+      day: "2-digit",
+      month: "short"
     });
   })();
 
-  /* ========= LOAD STATE ========= */
-  async function loadState() {
-    state.tasks = await api("/api/tasks");
+  /* ========= FOCUS MODE ========= */
+  function setFocus(on) {
+    state.focus = !!on;
+    $("focusBtn").textContent = state.focus ? "Exit Focus" : "Focus Mode";
 
-    const data = await api("/api/state");
-    state.notes = data.notes || "";
-    state.exam = data.exam || { label: "", date: "" };
-
-    $("notes").value = state.notes;
-    updateExam();
-    renderTasks();
-    updateKPIs();
+    document.body.classList.toggle("opacity-95", state.focus);
+    $("subtitle").textContent = state.focus
+      ? "Focus mode: keep it simple. One task at a time."
+      : "Your dashboard for calm, consistent progress.";
   }
 
   /* ========= KPIs ========= */
   function updateKPIs() {
     const total = state.tasks.length;
-    const done = state.tasks.filter(t => t.done).length;
+    const done = state.tasks.filter((t) => t.done).length;
 
-    $("kpiTotal").textContent = total;
-    $("kpiDone").textContent = done;
+    $("kpiTotal").textContent = String(total);
+    $("kpiDone").textContent = String(done);
 
     const minutes = Math.min(6 * 60, done * 25);
-    $("kpiTime").textContent =
-      `${Math.floor(minutes / 60)}h ${String(minutes % 60).padStart(2, "0")}m`;
+    const h = Math.floor(minutes / 60);
+    const m = minutes % 60;
+    $("kpiTime").textContent = `${h}h ${String(m).padStart(2, "0")}m`;
 
     $("kpiDebrief").textContent = state.notes.trim() ? "Saved" : "Empty";
   }
 
   /* ========= EXAM ========= */
   function updateExam() {
-    const label = state.exam.label || "Next exam";
+    const label = (state.exam.label || "").trim() || "Next exam";
     $("kpiCountdownLabel").textContent = label;
     $("examLabel").value = state.exam.label || "";
     $("examDate").value = state.exam.date || "";
@@ -82,14 +80,13 @@
 
     const now = new Date();
     const target = new Date(state.exam.date + "T00:00:00");
-    const diff = Math.ceil((target - now) / 86400000);
+    const diffDays = Math.ceil((target - now) / (1000 * 60 * 60 * 24));
 
-    $("kpiCountdown").textContent = diff >= 0 ? `${diff}d` : "Passed";
-    $("examHint").textContent =
-      `${label} • ${target.toLocaleDateString()}`;
+    $("kpiCountdown").textContent = diffDays >= 0 ? `${diffDays}d` : "Passed";
+    $("examHint").textContent = `${label} • ${target.toLocaleDateString()}`;
   }
 
-  /* ========= TASKS ========= */
+  /* ========= TASKS RENDER ========= */
   function renderTasks() {
     const list = $("taskList");
     list.innerHTML = "";
@@ -105,90 +102,204 @@
 
     for (const t of state.tasks) {
       const li = document.createElement("li");
-      li.className = "flex items-center gap-2 rounded-2xl bg-white/5 ring-soft px-3 py-2";
+      li.className =
+        "flex items-center gap-2 rounded-2xl bg-white/5 ring-soft px-3 py-2";
 
       const cb = document.createElement("input");
       cb.type = "checkbox";
-      cb.checked = t.done;
+      cb.checked = !!t.done;
       cb.className = "h-4 w-4";
-      cb.onchange = async () => {
-        await api(`/api/tasks/${t.id}`, {
-          method: "PATCH",
-          body: JSON.stringify({ done: cb.checked })
-        });
-        t.done = cb.checked;
-        updateKPIs();
-      };
+      cb.addEventListener("change", async () => {
+        try {
+          await api(`/api/tasks/${t.id}`, {
+            method: "PATCH",
+            body: JSON.stringify({ done: cb.checked })
+          });
+          t.done = cb.checked;
+          updateKPIs();
+          // keep strike-through in sync
+          title.className =
+            "flex-1 text-sm " + (t.done ? "line-through opacity-60" : "");
+        } catch (e) {
+          console.error(e);
+          cb.checked = !cb.checked; // revert
+          alert("Couldn’t update task. Check backend/CORS.");
+        }
+      });
 
       const title = document.createElement("div");
-      title.className = "flex-1 text-sm " + (t.done ? "line-through opacity-60" : "");
+      title.className =
+        "flex-1 text-sm " + (t.done ? "line-through opacity-60" : "");
       title.textContent = t.title;
 
       const del = document.createElement("button");
       del.className = "btn rounded-xl px-2 py-1 text-xs";
       del.textContent = "Delete";
-      del.onclick = async () => {
-        await api(`/api/tasks/${t.id}`, { method: "DELETE" });
-        state.tasks = state.tasks.filter(x => x.id !== t.id);
-        renderTasks();
-      };
+      del.addEventListener("click", async () => {
+        try {
+          await api(`/api/tasks/${t.id}`, { method: "DELETE" });
+          state.tasks = state.tasks.filter((x) => x.id !== t.id);
+          renderTasks();
+        } catch (e) {
+          console.error(e);
+          alert("Couldn’t delete task. Check backend/CORS.");
+        }
+      });
 
-      li.append(cb, title, del);
+      li.appendChild(cb);
+      li.appendChild(title);
+      li.appendChild(del);
       list.appendChild(li);
     }
 
     updateKPIs();
   }
 
-  async function addTask(title) {
-    title = title.trim();
+  /* ========= TASK ACTIONS ========= */
+  async function addTask(text) {
+    const title = (text || "").trim();
     if (!title) return;
 
-    const task = await api("/api/tasks", {
-      method: "POST",
-      body: JSON.stringify({ title })
-    });
+    try {
+      const created = await api("/api/tasks", {
+        method: "POST",
+        body: JSON.stringify({ title })
+      });
+      state.tasks.unshift(created);
+      $("taskInput").value = "";
+      renderTasks();
+    } catch (e) {
+      console.error(e);
+      alert("Couldn’t add task. Check backend/CORS.");
+    }
+  }
 
-    state.tasks.unshift(task);
-    $("taskInput").value = "";
+  async function seedTasks() {
+    const seed = [
+      "Maths: 15 mins algebra drill",
+      "Science: mark yesterday’s questions",
+      "English: write 1 paragraph plan"
+    ];
+
+    // Create sequentially to preserve order + simplicity
+    for (const s of seed) {
+      // eslint-disable-next-line no-await-in-loop
+      await addTask(s);
+    }
+  }
+
+  async function clearDone() {
+    const doneTasks = state.tasks.filter((t) => t.done);
+    if (!doneTasks.length) return;
+
+    for (const t of doneTasks) {
+      // eslint-disable-next-line no-await-in-loop
+      await api(`/api/tasks/${t.id}`, { method: "DELETE" });
+    }
+
+    state.tasks = state.tasks.filter((t) => !t.done);
     renderTasks();
   }
 
   /* ========= NOTES ========= */
   async function saveNotes() {
     state.notes = $("notes").value || "";
-    await api("/api/notes", {
-      method: "PUT",
-      body: JSON.stringify({ notes: state.notes })
-    });
-    updateKPIs();
+    try {
+      await api("/api/notes", {
+        method: "PUT",
+        body: JSON.stringify({ notes: state.notes })
+      });
+      updateKPIs();
+    } catch (e) {
+      console.error(e);
+      alert("Couldn’t save notes. Check backend/CORS.");
+    }
   }
 
-  /* ========= SAVE EXAM ========= */
+  /* ========= EXAM SAVE ========= */
   async function saveExam() {
     state.exam = {
       label: $("examLabel").value.trim(),
       date: $("examDate").value
     };
-    await api("/api/exam", {
-      method: "PUT",
-      body: JSON.stringify(state.exam)
-    });
-    updateExam();
+
+    try {
+      await api("/api/exam", {
+        method: "PUT",
+        body: JSON.stringify(state.exam)
+      });
+      updateExam();
+    } catch (e) {
+      console.error(e);
+      alert("Couldn’t save exam. Check backend/CORS.");
+    }
   }
 
-  /* ========= EVENTS ========= */
-  $("saveTaskBtn").onclick = () => addTask($("taskInput").value);
-  $("taskInput").onkeydown = e => e.key === "Enter" && addTask($("taskInput").value);
-  $("saveNotesBtn").onclick = saveNotes;
-  $("saveExamBtn").onclick = saveExam;
+  /* ========= RESET ========= */
+  function resetUIOnly() {
+    // This does NOT wipe backend data. It just reloads the page.
+    location.reload();
+  }
+
+  /* ========= WIRE EVENTS (THIS WAS MISSING) ========= */
+  function wireEvents() {
+    $("addTaskBtn").addEventListener("click", () => $("taskInput").focus());
+    $("saveTaskBtn").addEventListener("click", () => addTask($("taskInput").value));
+    $("taskInput").addEventListener("keydown", (e) => {
+      if (e.key === "Enter") addTask($("taskInput").value);
+    });
+
+    $("saveNotesBtn").addEventListener("click", saveNotes);
+    $("saveExamBtn").addEventListener("click", saveExam);
+
+    $("seedBtn").addEventListener("click", () => {
+      seedTasks().catch((e) => {
+        console.error(e);
+        alert("Couldn’t seed tasks. Check backend/CORS.");
+      });
+    });
+
+    $("clearDoneBtn").addEventListener("click", () => {
+      clearDone().catch((e) => {
+        console.error(e);
+        alert("Couldn’t clear done tasks. Check backend/CORS.");
+      });
+    });
+
+    $("focusBtn").addEventListener("click", () => setFocus(!state.focus));
+    $("resetBtn").addEventListener("click", resetUIOnly);
+  }
 
   /* ========= BOOT ========= */
-  loadState().catch(err => {
+  async function boot() {
+    wireEvents();
+
+    // Load from backend
+    const [tasks, stored] = await Promise.all([
+      api("/api/tasks"),
+      api("/api/state")
+    ]);
+
+    state.tasks = Array.isArray(tasks) ? tasks : [];
+    state.notes = stored?.notes || "";
+    state.exam = stored?.exam || { label: "", date: "" };
+
+    $("notes").value = state.notes;
+
+    updateExam();
+    renderTasks();
+    updateKPIs();
+
+    // Focus defaults off (no backend storage for focus)
+    setFocus(false);
+  }
+
+  boot().catch((err) => {
     console.error(err);
-    alert("Backend not reachable. Check API_BASE.");
+    alert("Backend not reachable or CORS blocked. Check Render CORS settings.");
   });
 </script>
+
 
 
   <style>
